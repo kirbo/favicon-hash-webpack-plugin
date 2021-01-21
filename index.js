@@ -22,8 +22,8 @@ class FaviconHashWebpackPlugin {
     compiler.hooks.compilation.tap(this.constructor.name, (compilation) => {
       console
         .log(
-          "compilation",
-          JSON.stringify(compilation, null, 2)
+          "compilation.hooks",
+          JSON.stringify(compilation.hooks, null, 2)
         )(
           compilation.hooks.htmlWebpackPluginBeforeAssetTagGeneration ||
             compilation.hooks.htmlWebpackPluginBeforeHtmlProcessing
