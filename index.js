@@ -21,8 +21,8 @@ class FaviconHashWebpackPlugin {
   apply(compiler) {
     compiler.hooks.compilation.tap(this.constructor.name, (compilation) => {
       (
-        compilation.hooks.htmlWebpackPluginBeforeAssetTagGeneration ||
-        compilation.hooks.htmlWebpackPluginBeforeHtmlProcessing
+        HtmlWebpackPlugin.getHooks(compilation).beforeAssetTagGeneration ||
+        HtmlWebpackPlugin.getHooks(compilation).beforeHtmlProcessing
       ).tapAsync(this.constructor.name, (htmlPluginData, cb) => {
         const {
           plugin: {
