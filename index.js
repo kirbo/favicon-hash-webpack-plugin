@@ -20,62 +20,59 @@ class FaviconHashWebpackPlugin {
 
   apply(compiler) {
     compiler.hooks.compilation.tap(this.constructor.name, (compilation) => {
-      console
-        .log(
-          "compilation.hooks",
-          JSON.stringify(compilation.hooks, null, 2)
-        )(
-          compilation.hooks.htmlWebpackPluginBeforeAssetTagGeneration ||
-            compilation.hooks.htmlWebpackPluginBeforeHtmlProcessing
-        )
-        .tapAsync(this.constructor.name, (htmlPluginData, cb) => {
-          const {
-            plugin: {
-              options: { favicon },
+      console.log(
+        "compilation.hooks",
+        JSON.stringify(compilation.hooks, null, 2)
+      );
+
+      (
+        compilation.hooks.htmlWebpackPluginBeforeAssetTagGeneration ||
+        compilation.hooks.htmlWebpackPluginBeforeHtmlProcessing
+      ).tapAsync(this.constructor.name, (htmlPluginData, cb) => {
+        const {
+          plugin: {
+            options: { favicon },
+          },
+        } = htmlPluginData; // HtmlWebpackPlugin instance config
+        if (Object.prototype.toString.call(favicon) !== "[object String]") {
+          throw new Error(
+            `${this.constructor.name}: html-webpack-plugin options favicon key should be a string`
+          );
+        }
+        const faviconPath = path.resolve(compilation.compiler.context, favicon); // logical path
+        const ext = path.extname(faviconPath);
+        let publicPath =
+          compilation.mainTemplate.getPublicPath({
+            hash: compilation.hash,
+          }) || "";
+        if (publicPath && publicPath.substr(-1) !== "/") {
+          publicPath += "/";
+        }
+        try {
+          const source = fs.readFileSync(faviconPath);
+          const stat = fs.statSync(faviconPath);
+          const hash = md5(source, "utf-8");
+          const faviconName = `${path.basename(
+            faviconPath,
+            ext
+          )}.${hash}${ext}`;
+          removeOriginalFavicon(compilation, faviconPath);
+          compilation.assets[faviconName] = {
+            source() {
+              return source;
             },
-          } = htmlPluginData; // HtmlWebpackPlugin instance config
-          if (Object.prototype.toString.call(favicon) !== "[object String]") {
-            throw new Error(
-              `${this.constructor.name}: html-webpack-plugin options favicon key should be a string`
-            );
-          }
-          const faviconPath = path.resolve(
-            compilation.compiler.context,
-            favicon
-          ); // logical path
-          const ext = path.extname(faviconPath);
-          let publicPath =
-            compilation.mainTemplate.getPublicPath({
-              hash: compilation.hash,
-            }) || "";
-          if (publicPath && publicPath.substr(-1) !== "/") {
-            publicPath += "/";
-          }
-          try {
-            const source = fs.readFileSync(faviconPath);
-            const stat = fs.statSync(faviconPath);
-            const hash = md5(source, "utf-8");
-            const faviconName = `${path.basename(
-              faviconPath,
-              ext
-            )}.${hash}${ext}`;
-            removeOriginalFavicon(compilation, faviconPath);
-            compilation.assets[faviconName] = {
-              source() {
-                return source;
-              },
-              size() {
-                return stat.size;
-              },
-            };
-            htmlPluginData.assets.favicon = publicPath + faviconName;
-            cb(null, htmlPluginData);
-          } catch (err) {
-            throw new Error(
-              `FaviconHashPlugin: could not load file ${faviconPath}`
-            );
-          }
-        });
+            size() {
+              return stat.size;
+            },
+          };
+          htmlPluginData.assets.favicon = publicPath + faviconName;
+          cb(null, htmlPluginData);
+        } catch (err) {
+          throw new Error(
+            `FaviconHashPlugin: could not load file ${faviconPath}`
+          );
+        }
+      });
     });
   }
 }
